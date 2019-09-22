@@ -10,5 +10,7 @@
 
 **/.docker/
 **/.terraform/
+*.coverage
 *.env
-*.sha256sum
+*.zip
+coverage.xml

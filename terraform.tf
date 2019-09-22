@@ -8,6 +8,10 @@ terraform {
   required_version = ">= 0.12.0"
 }
 
+provider archive {
+  version = "~> 1.2"
+}
+
 provider aws {
   region  = "us-east-1"
   version = "~> 2.7"
@@ -20,7 +24,7 @@ provider null {
 locals {
   domain  = "mancevice.dev"
   release = "2019.9.22"
-  repo    = "https://github.com/amancevice/pypi.mancevice.dev"
+  repo    = "https://github.com/amancevice/pypi.${local.domain}"
 
   tags = {
     App     = "pypi.${local.domain}"
@@ -30,109 +34,171 @@ locals {
   }
 }
 
-data aws_iam_policy_document website {
-  statement {
-    sid       = "AllowCloudFront"
-    actions   = ["s3:GetObject"]
-    resources = ["arn:aws:s3:::pypi.${local.domain}/*"]
-
-    principals {
-      type        = "AWS"
-      identifiers = [aws_cloudfront_origin_access_identity.website.iam_arn]
-    }
-  }
+data archive_file package {
+  source_file = "${path.module}/index.py"
+  output_path = "${path.module}/package.zip"
+  type        = "zip"
 }
 
 data aws_acm_certificate cert {
-  domain   = local.domain
-  statuses = ["ISSUED"]
+  domain = "mancevice.dev"
+  types  = ["AMAZON_ISSUED"]
 }
 
-resource aws_cloudfront_distribution website {
-  aliases             = ["pypi.${local.domain}"]
-  default_root_object = "index.html"
-  enabled             = true
-  is_ipv6_enabled     = true
-  price_class         = "PriceClass_100"
+data aws_iam_policy_document assume_role {
+  statement {
+    actions = ["sts:AssumeRole"]
 
-  custom_error_response {
-    error_caching_min_ttl = 300
-    error_code            = 403
-    response_code         = 404
-    response_page_path    = "/error.html"
-  }
-
-  default_cache_behavior {
-    allowed_methods        = ["GET", "HEAD"]
-    cached_methods         = ["GET", "HEAD"]
-    default_ttl            = 86400
-    max_ttl                = 31536000
-    min_ttl                = 0
-    target_origin_id       = aws_s3_bucket.website.bucket
-    viewer_protocol_policy = "redirect-to-https"
-
-    forwarded_values {
-      query_string = false
-
-      cookies {
-        forward = "none"
-      }
+    principals {
+      type        = "Service"
+      identifiers = ["lambda.amazonaws.com"]
     }
   }
+}
 
-  origin {
-    domain_name = aws_s3_bucket.website.bucket_regional_domain_name
-    origin_id   = aws_s3_bucket.website.bucket
+data aws_iam_policy_document api {
+  statement {
+    sid = "ReadS3"
 
-    s3_origin_config {
-      origin_access_identity = aws_cloudfront_origin_access_identity.website.cloudfront_access_identity_path
+    actions = [
+      "s3:Get*",
+      "s3:List*",
+    ]
+
+    resources = [
+      "arn:aws:s3:::${aws_s3_bucket.pypi.bucket}",
+      "arn:aws:s3:::${aws_s3_bucket.pypi.bucket}/*",
+    ]
+  }
+
+  statement {
+    sid = "WriteLambdaLogs"
+
+    actions = [
+      "logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:PutLogEvents",
+    ]
+
+    resources = ["*"]
+  }
+}
+
+resource aws_api_gateway_base_path_mapping api {
+  api_id      = aws_api_gateway_rest_api.api.id
+  domain_name = aws_api_gateway_domain_name.api.domain_name
+  stage_name  = "prod"
+  base_path   = ""
+}
+
+resource aws_api_gateway_domain_name api {
+  certificate_arn = data.aws_acm_certificate.cert.arn
+  domain_name     = "pypi.${local.domain}"
+}
+
+resource aws_api_gateway_integration proxy_get {
+  content_handling        = "CONVERT_TO_TEXT"
+  http_method             = aws_api_gateway_method.proxy_get.http_method
+  integration_http_method = "POST"
+  resource_id             = aws_api_gateway_resource.proxy.id
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.api.invoke_arn
+}
+
+resource aws_api_gateway_integration root_get {
+  content_handling        = "CONVERT_TO_TEXT"
+  http_method             = aws_api_gateway_method.proxy_get.http_method
+  integration_http_method = "POST"
+  resource_id             = aws_api_gateway_rest_api.api.root_resource_id
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.api.invoke_arn
+}
+
+resource aws_api_gateway_method proxy_get {
+  authorization = "NONE"
+  http_method   = "GET"
+  resource_id   = aws_api_gateway_resource.proxy.id
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+}
+
+resource aws_api_gateway_method root_get {
+  authorization = "NONE"
+  http_method   = "GET"
+  resource_id   = aws_api_gateway_rest_api.api.root_resource_id
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+}
+
+resource aws_api_gateway_resource proxy {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+  path_part   = "{proxy+}"
+}
+
+resource aws_api_gateway_rest_api api {
+  description = "PyPI service"
+  name        = "pypi.${local.domain}"
+}
+
+resource aws_cloudwatch_log_group api {
+  name              = "/aws/lambda/${aws_lambda_function.api.function_name}"
+  retention_in_days = 30
+  tags              = local.tags
+}
+
+resource aws_iam_role role {
+  assume_role_policy = data.aws_iam_policy_document.assume_role.json
+  description        = "PyPI Lambda permissions"
+  name               = "pypi-mancevice-dev"
+  tags               = local.tags
+}
+
+resource aws_iam_role_policy policy {
+  name   = "pypi-mancevice-dev"
+  role   = aws_iam_role.role.id
+  policy = data.aws_iam_policy_document.api.json
+}
+
+resource aws_lambda_function api {
+  description      = "PyPI service REST API"
+  filename         = data.archive_file.package.output_path
+  function_name    = "pypi-mancevice-dev"
+  handler          = "index.handler"
+  role             = aws_iam_role.role.arn
+  runtime          = "python3.7"
+  source_code_hash = data.archive_file.package.output_base64sha256
+  tags             = local.tags
+
+  environment {
+    variables = {
+      S3_BUCKET = aws_s3_bucket.pypi.bucket
     }
   }
-
-  restrictions {
-    geo_restriction {
-      restriction_type = "none"
-    }
-  }
-
-  viewer_certificate {
-    acm_certificate_arn      = data.aws_acm_certificate.cert.arn
-    minimum_protocol_version = "TLSv1.1_2016"
-    ssl_support_method       = "sni-only"
-  }
 }
 
-resource aws_cloudfront_origin_access_identity website {
-  comment = "access-identity-pypi.${local.domain}.s3.amazonaws.com"
+resource aws_lambda_permission invoke_api {
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.api.arn
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.api.execution_arn}/*/*/*"
 }
 
-resource aws_s3_bucket website {
-  acl           = "private"
-  bucket        = "pypi.${local.domain}"
-  force_destroy = false
-  policy        = data.aws_iam_policy_document.website.json
-  tags          = local.tags
-
-  website {
-    error_document = "error.html"
-    index_document = "index.html"
-  }
+resource aws_s3_bucket pypi {
+  acl    = "private"
+  bucket = "pypi.${local.domain}"
+  tags   = local.tags
 }
 
-resource aws_s3_bucket_public_access_block website {
+resource aws_s3_bucket_public_access_block pypi {
   block_public_acls       = true
   block_public_policy     = true
-  bucket                  = aws_s3_bucket.website.id
+  bucket                  = aws_s3_bucket.pypi.id
   ignore_public_acls      = true
   restrict_public_buckets = true
 }
 
 output bucket_name {
   description = "S3 website bucket name."
-  value       = aws_s3_bucket.website.bucket
-}
-
-output cloudfront_distribution_id {
-  description = "CloudFront distribution ID."
-  value       = aws_cloudfront_distribution.website.id
+  value       = aws_s3_bucket.pypi.bucket
 }
