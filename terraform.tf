@@ -172,7 +172,8 @@ resource aws_lambda_function api {
 
   environment {
     variables = {
-      S3_BUCKET = aws_s3_bucket.pypi.bucket
+      S3_BUCKET            = aws_s3_bucket.pypi.bucket
+      S3_PRESIGNED_URL_TTL = "900"
     }
   }
 }
