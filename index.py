@@ -5,7 +5,7 @@ from string import Template
 
 import boto3
 
-ROOT_RESOURCE = os.getenv('ROOT_RESOURCE') or 'simple'
+BASE_PATH = os.getenv('BASE_PATH') or 'simple'
 ANCHOR = Template('\n  <a href="$href">$name</a><br>')
 INDEX = Template(textwrap.dedent('''\
     <!DOCTYPE html>
@@ -115,10 +115,10 @@ def handler(event, *_):
 
     # GET /
     if len(parts) == 1 and path == '':
-        res = redirect(ROOT_RESOURCE)
+        res = redirect(BASE_PATH)
 
     # GET /simple/
-    elif len(parts) == 1 and path == ROOT_RESOURCE:
+    elif len(parts) == 1 and path == BASE_PATH:
         res = get_index()
 
     # GET /simple/<pkg>/

@@ -22,9 +22,10 @@ provider null {
 }
 
 locals {
-  domain  = "mancevice.dev"
-  release = "2019.9.22"
-  repo    = "https://github.com/amancevice/pypi.${local.domain}"
+  domain    = "mancevice.dev"
+  release   = "2019.9.22"
+  repo      = "https://github.com/amancevice/pypi.${local.domain}"
+  base_path = "simple"
 
   tags = {
     App     = "pypi.${local.domain}"
@@ -72,6 +73,12 @@ data aws_iam_policy_document api {
   }
 
   statement {
+    sid       = "Reindex"
+    actions   = ["s3:PutObject"]
+    resources = ["arn:aws:s3:::${aws_s3_bucket.pypi.bucket}/index.html"]
+  }
+
+  statement {
     sid = "WriteLambdaLogs"
 
     actions = [
@@ -88,7 +95,7 @@ resource aws_api_gateway_base_path_mapping api {
   api_id      = aws_api_gateway_rest_api.api.id
   domain_name = aws_api_gateway_domain_name.api.domain_name
   stage_name  = "prod"
-  base_path   = ""
+  base_path   = local.base_path
 }
 
 resource aws_api_gateway_domain_name api {
@@ -147,6 +154,12 @@ resource aws_cloudwatch_log_group api {
   tags              = local.tags
 }
 
+resource aws_cloudwatch_log_group reindex {
+  name              = "/aws/lambda/${aws_lambda_function.reindex.function_name}"
+  retention_in_days = 30
+  tags              = local.tags
+}
+
 resource aws_iam_role role {
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
   description        = "PyPI Lambda permissions"
@@ -174,6 +187,24 @@ resource aws_lambda_function api {
     variables = {
       S3_BUCKET            = aws_s3_bucket.pypi.bucket
       S3_PRESIGNED_URL_TTL = "900"
+      BASE_PATH            = local.base_path
+    }
+  }
+}
+
+resource aws_lambda_function reindex {
+  description      = "Reindex PyPI root"
+  filename         = data.archive_file.package.output_path
+  function_name    = "pypi-mancevice-dev-reindex"
+  handler          = "index.reindex"
+  role             = aws_iam_role.role.arn
+  runtime          = "python3.7"
+  source_code_hash = data.archive_file.package.output_base64sha256
+  tags             = local.tags
+
+  environment {
+    variables = {
+      S3_BUCKET = aws_s3_bucket.pypi.bucket
     }
   }
 }
@@ -185,10 +216,27 @@ resource aws_lambda_permission invoke_api {
   source_arn    = "${aws_api_gateway_rest_api.api.execution_arn}/*/*/*"
 }
 
+resource aws_lambda_permission invoke_reindex {
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.reindex.arn
+  principal     = "s3.amazonaws.com"
+  source_arn    = aws_s3_bucket.pypi.arn
+}
+
 resource aws_s3_bucket pypi {
   acl    = "private"
   bucket = "pypi.${local.domain}"
   tags   = local.tags
+}
+
+resource aws_s3_bucket_notification reindex {
+  bucket = aws_s3_bucket.pypi.id
+
+  lambda_function {
+    lambda_function_arn = aws_lambda_function.reindex.arn
+    events              = ["s3:ObjectCreated:*", "s3:ObjectRemoved:*"]
+    filter_suffix       = ".tar.gz"
+  }
 }
 
 resource aws_s3_bucket_public_access_block pypi {
