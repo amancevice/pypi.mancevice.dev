@@ -44,9 +44,8 @@ locals {
 }
 
 module serverless_pypi {
-  # source                          = "amancevice/serverless-pypi/aws"
-  # version                         = "~> 0.2"
-  source                       = "/Users/amancevice/smallweirdnumber/terraform/aws/serverless-pypi"
+  source                       = "amancevice/serverless-pypi/aws"
+  version                      = "~> 0.2"
   api_authorization            = local.api_authorization
   api_authorizer_id            = module.serverless_pypi_basic_auth.authorizer.id
   api_base_path                = local.api_base_path
@@ -59,9 +58,8 @@ module serverless_pypi {
 }
 
 module serverless_pypi_basic_auth {
-  # source                          = "amancevice/serverless-pypi-basic-auth/aws"
-  # version                         = "~> 0.2"
-  source               = "/Users/amancevice/smallweirdnumber/terraform/aws/serverless-pypi-basic-auth"
+  source               = "amancevice/serverless-pypi-basic-auth/aws"
+  version              = "~> 0.1"
   api                  = module.serverless_pypi.api
   basic_auth_username  = local.basic_auth_username
   basic_auth_password  = local.basic_auth_password
