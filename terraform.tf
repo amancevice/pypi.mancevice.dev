@@ -18,15 +18,25 @@ provider aws {
 }
 
 locals {
-  domain = "mancevice.dev"
+  domain                          = "mancevice.dev"
+  release                         = "2020.1.31"
+  repo                            = "https://github.com/amancevice/pypi.mancevice.dev"
+  base_path                       = "simple"
+  stage_name                      = "prod"
+  api_authorization               = "CUSTOM"
+  api_name                        = "pypi.mancevice.dev"
+  lambda_function_name_api        = "pypi-mancevice-dev"
+  lambda_function_name_authorizer = "pypi-mancevice-dev-authorizer"
+  lambda_function_name_reindex    = "pypi-mancevice-dev-reindex"
+  role_name                       = "pypi-mancevice-dev"
+  role_name_authorizer            = "pypi-mancevice-dev-authorizer"
+  s3_bucket_name                  = "pypi.mancevice.dev"
 
-  release    = "2019.9.22"
-  repo       = "https://github.com/amancevice/pypi.${local.domain}"
-  base_path  = "simple"
-  stage_name = "prod"
+  basic_auth_username = var.basic_auth_username
+  basic_auth_password = var.basic_auth_password
 
   tags = {
-    App     = "pypi.${local.domain}"
+    App     = "pypi.mancevice.dev"
     Name    = local.domain
     Release = local.release
     Repo    = local.repo
@@ -34,14 +44,29 @@ locals {
 }
 
 module serverless_pypi {
-  source                       = "amancevice/serverless-pypi/aws"
-  version                      = "~> 0.1"
-  api_name                     = "pypi.${local.domain}"
-  lambda_function_name_api     = "pypi-${replace(local.domain, ".", "-")}"
-  lambda_function_name_reindex = "pypi-${replace(local.domain, ".", "-")}-reindex"
-  role_name                    = "pypi-${replace(local.domain, ".", "-")}"
-  s3_bucket_name               = "pypi.${local.domain}"
+  # source                          = "amancevice/serverless-pypi/aws"
+  # version                         = "~> 0.2"
+  source                       = "/Users/amancevice/smallweirdnumber/terraform/aws/serverless-pypi"
+  api_authorization            = local.api_authorization
+  api_authorizer_id            = module.serverless_pypi_basic_auth.authorizer.id
+  api_name                     = local.api_name
+  lambda_function_name_api     = local.lambda_function_name_api
+  lambda_function_name_reindex = local.lambda_function_name_reindex
+  role_name                    = local.role_name
+  s3_bucket_name               = local.s3_bucket_name
   tags                         = local.tags
+}
+
+module serverless_pypi_basic_auth {
+  # source                          = "amancevice/serverless-pypi/aws"
+  # version                         = "~> 0.2"
+  source               = "/Users/amancevice/smallweirdnumber/terraform/aws/serverless-pypi-basic-auth"
+  api                  = module.serverless_pypi.api
+  basic_auth_username  = local.basic_auth_username
+  basic_auth_password  = local.basic_auth_password
+  lambda_function_name = local.lambda_function_name_authorizer
+  role_name            = local.role_name_authorizer
+  tags                 = local.tags
 }
 
 data aws_acm_certificate cert {
@@ -50,7 +75,7 @@ data aws_acm_certificate cert {
 }
 
 resource aws_api_gateway_base_path_mapping api {
-  api_id      = module.serverless_pypi.api_id
+  api_id      = module.serverless_pypi.api.id
   domain_name = aws_api_gateway_domain_name.api.domain_name
   stage_name  = local.stage_name
   base_path   = local.base_path
@@ -61,6 +86,10 @@ resource aws_api_gateway_domain_name api {
   domain_name     = "pypi.${local.domain}"
 }
 
-output api_id {
-  value = module.serverless_pypi.api_id
+variable basic_auth_username {
+  description = "PyPI BASIC authorization username."
+}
+
+variable basic_auth_password {
+  description = "PyPI BASIC authorization password."
 }
