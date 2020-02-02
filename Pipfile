@@ -8,6 +8,7 @@ ipdb = "*"
 ipython = "*"
 
 [packages]
+boto3 = "*"
 requests = "*"
 pytest = "*"
 
