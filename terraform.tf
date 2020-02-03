@@ -21,7 +21,7 @@ locals {
   tags = {
     App     = "pypi.mancevice.dev"
     Name    = "mancevice.dev"
-    Release = "2020.1.31"
+    Release = "2020.2.2"
     Repo    = "https://github.com/amancevice/pypi.mancevice.dev"
   }
 }
@@ -30,7 +30,7 @@ module serverless_pypi {
   source                       = "amancevice/serverless-pypi/aws"
   version                      = "~> 0.2"
   api_authorization            = "CUSTOM"
-  api_authorizer_id            = module.serverless_pypi_basic_auth.authorizer.id
+  api_authorizer_id            = module.serverless_pypi_cognito.authorizer.id
   api_base_path                = "simple"
   api_name                     = "pypi.mancevice.dev"
   lambda_function_name_api     = "pypi-mancevice-dev-api"
@@ -48,21 +48,12 @@ module serverless_pypi_domain {
   stage_name  = "simple"
 }
 
-module serverless_pypi_basic_auth {
-  source               = "amancevice/serverless-pypi-basic-auth/aws"
-  version              = "~> 0.1"
-  api                  = module.serverless_pypi.api
-  basic_auth_password  = var.basic_auth_password
-  basic_auth_username  = var.basic_auth_username
+module serverless_pypi_cognito {
+  source               = "amancevice/serverless-pypi-cognito/aws"
+  version              = "~> 0.2"
+  api_id               = module.serverless_pypi.api.id
   lambda_function_name = "pypi-mancevice-dev-authorizer"
   role_name            = "pypi-mancevice-dev-authorizer"
   tags                 = local.tags
-}
-
-variable basic_auth_username {
-  description = "PyPI BASIC authorization username."
-}
-
-variable basic_auth_password {
-  description = "PyPI BASIC authorization password."
+  user_pool_name       = "pypi.mancevice.dev"
 }
