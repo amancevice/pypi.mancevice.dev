@@ -40,14 +40,6 @@ module serverless_pypi {
   tags                         = local.tags
 }
 
-module serverless_pypi_domain {
-  source      = "./domain"
-  api_id      = module.serverless_pypi.api.id
-  cert_domain = "mancevice.dev"
-  pypi_domain = "pypi.mancevice.dev"
-  stage_name  = "simple"
-}
-
 module serverless_pypi_cognito {
   source               = "amancevice/serverless-pypi-cognito/aws"
   version              = "~> 0.2"
@@ -56,4 +48,12 @@ module serverless_pypi_cognito {
   role_name            = "pypi-mancevice-dev-authorizer"
   tags                 = local.tags
   user_pool_name       = "pypi.mancevice.dev"
+}
+
+module serverless_pypi_domain {
+  source      = "./domain"
+  api_id      = module.serverless_pypi.api.id
+  cert_domain = "mancevice.dev"
+  pypi_domain = "pypi.mancevice.dev"
+  stage_name  = "simple"
 }
