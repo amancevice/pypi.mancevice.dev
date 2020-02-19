@@ -57,3 +57,8 @@ module serverless_pypi_domain {
   pypi_domain = "pypi.mancevice.dev"
   stage_name  = "simple"
 }
+
+output cognito_client_id {
+  description = "Cognito user pool client ID"
+  value       = module.serverless_pypi_cognito.user_pool_client.id
+}
