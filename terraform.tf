@@ -58,6 +58,11 @@ module serverless_pypi_domain {
   stage_name  = "simple"
 }
 
+output api_id {
+  description = "API Gateway REST API ID"
+  value       = module.serverless_pypi.api.id
+}
+
 output cognito_client_id {
   description = "Cognito user pool client ID"
   value       = module.serverless_pypi_cognito.user_pool_client.id
