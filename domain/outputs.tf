@@ -1,4 +1,4 @@
-output tmp {
+output base_path {
   description = "API Gateway custom domain base path mapping."
   value       = aws_api_gateway_base_path_mapping.pypi
 }

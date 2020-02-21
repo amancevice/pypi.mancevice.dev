@@ -31,7 +31,7 @@ module serverless_pypi {
   version                      = "~> 0.2"
   api_authorization            = "CUSTOM"
   api_authorizer_id            = module.serverless_pypi_cognito.authorizer.id
-  api_base_path                = "simple"
+  api_base_path                = module.serverless_pypi_domain.base_path.base_path
   api_name                     = "pypi.mancevice.dev"
   lambda_function_name_api     = "pypi-mancevice-dev-api"
   lambda_function_name_reindex = "pypi-mancevice-dev-reindex"
@@ -53,6 +53,7 @@ module serverless_pypi_cognito {
 module serverless_pypi_domain {
   source      = "./domain"
   api_id      = module.serverless_pypi.api.id
+  base_path   = "simple"
   cert_domain = "mancevice.dev"
   pypi_domain = "pypi.mancevice.dev"
   stage_name  = "simple"
@@ -61,6 +62,11 @@ module serverless_pypi_domain {
 output api_id {
   description = "API Gateway REST API ID"
   value       = module.serverless_pypi.api.id
+}
+
+output api_base_path {
+  description = "API Gateway Custom Domain base path"
+  value       = module.serverless_pypi_domain.base_path.base_path
 }
 
 output cognito_client_id {
