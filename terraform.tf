@@ -78,3 +78,8 @@ output cognito_user_pool_id {
   description = "Cognito user pool ID"
   value       = module.serverless_pypi_cognito.user_pool.id
 }
+
+output pypi_url {
+  description = "PyPI endpoint URL"
+  value       = "https://${module.serverless_pypi_domain.domain.domain_name}/${module.serverless_pypi_domain.base_path.base_path}"
+}
