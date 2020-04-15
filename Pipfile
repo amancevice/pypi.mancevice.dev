@@ -4,13 +4,9 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
-ipdb = "*"
-ipython = "*"
 
 [packages]
-boto3 = "*"
-requests = "*"
+ipdb = "*"
+ipython = "*"
 pytest = "*"
-
-[requires]
-python_version = "3.8"
+requests = "*"
