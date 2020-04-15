@@ -28,11 +28,12 @@ locals {
 
 module serverless_pypi {
   source                       = "amancevice/serverless-pypi/aws"
-  version                      = "~> 0.3"
+  version                      = "~> 1.0"
   api_authorization            = "CUSTOM"
   api_authorizer_id            = module.serverless_pypi_cognito.authorizer.id
   api_base_path                = module.serverless_pypi_domain.base_path.base_path
   api_name                     = "pypi.mancevice.dev"
+  fallback_index_url           = "https://pypi.org/simple/"
   lambda_api_function_name     = "pypi-mancevice-dev-api"
   lambda_reindex_function_name = "pypi-mancevice-dev-reindex"
   role_name                    = "pypi-mancevice-dev"
