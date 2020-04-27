@@ -45,7 +45,7 @@ module serverless_pypi {
 
 module serverless_pypi_cognito {
   source               = "amancevice/serverless-pypi-cognito/aws"
-  version              = "~> 0.2"
+  version              = "~> 0.3"
   api_id               = module.serverless_pypi.api.id
   lambda_function_name = "pypi-mancevice-dev-authorizer"
   role_name            = "pypi-mancevice-dev-authorizer"
