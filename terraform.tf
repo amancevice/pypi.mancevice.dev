@@ -21,21 +21,23 @@ locals {
   tags = {
     App     = "pypi.mancevice.dev"
     Name    = "mancevice.dev"
-    Release = "2020.2.2"
+    Release = "2020.4.15"
     Repo    = "https://github.com/amancevice/pypi.mancevice.dev"
   }
 }
 
 module serverless_pypi {
   source                       = "amancevice/serverless-pypi/aws"
-  version                      = "~> 1.0"
+  version                      = "~> 1.1"
   api_authorization            = "CUSTOM"
   api_authorizer_id            = module.serverless_pypi_cognito.authorizer.id
   api_base_path                = module.serverless_pypi_domain.base_path.base_path
   api_name                     = "pypi.mancevice.dev"
   fallback_index_url           = "https://pypi.org/simple/"
   lambda_api_function_name     = "pypi-mancevice-dev-api"
+  lambda_api_publish           = true
   lambda_reindex_function_name = "pypi-mancevice-dev-reindex"
+  lambda_reindex_publish       = true
   role_name                    = "pypi-mancevice-dev"
   s3_bucket_name               = "pypi.mancevice.dev"
   tags                         = local.tags
@@ -78,6 +80,14 @@ output cognito_client_id {
 output cognito_user_pool_id {
   description = "Cognito user pool ID"
   value       = module.serverless_pypi_cognito.user_pool.id
+}
+
+output lambda_api_arn {
+  value = module.serverless_pypi.lambda_api_arn
+}
+
+output lambda_reindex_arn {
+  value = module.serverless_pypi.lambda_reindex_arn
 }
 
 output pypi_url {
