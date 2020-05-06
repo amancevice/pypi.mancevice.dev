@@ -21,14 +21,14 @@ locals {
   tags = {
     App     = "pypi.mancevice.dev"
     Name    = "mancevice.dev"
-    Release = "2020.4.15"
+    Release = "2020.5.5"
     Repo    = "https://github.com/amancevice/pypi.mancevice.dev"
   }
 }
 
 module serverless_pypi {
   source                       = "amancevice/serverless-pypi/aws"
-  version                      = "~> 1.1"
+  version                      = "~> 1.2"
   api_authorization            = "CUSTOM"
   api_authorizer_id            = module.serverless_pypi_cognito.authorizer.id
   api_base_path                = module.serverless_pypi_domain.base_path.base_path
@@ -48,6 +48,7 @@ module serverless_pypi_cognito {
   version              = "~> 0.3"
   api_id               = module.serverless_pypi.api.id
   lambda_function_name = "pypi-mancevice-dev-authorizer"
+  lambda_publish       = true
   role_name            = "pypi-mancevice-dev-authorizer"
   tags                 = local.tags
   user_pool_name       = "pypi.mancevice.dev"
