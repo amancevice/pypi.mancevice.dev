@@ -19,10 +19,9 @@ provider aws {
 
 locals {
   tags = {
-    App     = "pypi.mancevice.dev"
-    Name    = "mancevice.dev"
-    Release = "2020.5.5"
-    Repo    = "https://github.com/amancevice/pypi.mancevice.dev"
+    App  = "pypi.mancevice.dev"
+    Name = "mancevice.dev"
+    Repo = "https://github.com/amancevice/pypi.mancevice.dev"
   }
 }
 
