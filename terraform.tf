@@ -15,7 +15,7 @@ locals {
 terraform {
   backend s3 {
     bucket = "mancevice.dev"
-    key    = "terraform/pypi.tfstate"
+    key    = "terraform/pypi.mancevice.dev.tfstate"
     region = "us-east-1"
   }
 
