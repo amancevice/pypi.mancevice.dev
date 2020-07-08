@@ -1,3 +1,17 @@
+variable ROLE_ARN {
+  description = "IAM role ARN"
+}
+
+locals {
+  role_arn = var.ROLE_ARN
+
+  tags = {
+    App  = "pypi.mancevice.dev"
+    Name = "mancevice.dev"
+    Repo = "https://github.com/amancevice/pypi.mancevice.dev"
+  }
+}
+
 terraform {
   backend s3 {
     bucket = "mancevice.dev"
@@ -5,7 +19,7 @@ terraform {
     region = "us-east-1"
   }
 
-  required_version = ">= 0.12.0"
+  required_version = "~> 0.12"
 }
 
 provider archive {
@@ -15,13 +29,9 @@ provider archive {
 provider aws {
   region  = "us-east-1"
   version = "~> 2.7"
-}
 
-locals {
-  tags = {
-    App  = "pypi.mancevice.dev"
-    Name = "mancevice.dev"
-    Repo = "https://github.com/amancevice/pypi.mancevice.dev"
+  assume_role {
+    role_arn = local.role_arn
   }
 }
 
