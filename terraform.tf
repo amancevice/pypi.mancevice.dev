@@ -1,10 +1,6 @@
-variable ROLE_ARN {
-  description = "IAM role ARN"
-}
+variable ROLE_ARN { default = null }
 
 locals {
-  role_arn = var.ROLE_ARN
-
   tags = {
     App  = "pypi.mancevice.dev"
     Name = "mancevice.dev"
@@ -31,7 +27,7 @@ provider aws {
   version = "~> 2.7"
 
   assume_role {
-    role_arn = local.role_arn
+    role_arn = var.ROLE_ARN
   }
 }
 
