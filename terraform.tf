@@ -114,7 +114,7 @@ module serverless_pypi {
   lambda_reindex_publish       = local.publish_lambdas
 
   rest_api_authorization    = "CUSTOM"
-  rest_api_authorizer_id    = module.serverless_pypi_cognito.authorizer.id
+  rest_api_authorizer_id    = module.serverless_pypi_cognito.rest_api_authorizer.id
   rest_api_base_path        = local.base_path
   rest_api_execution_arn    = aws_api_gateway_rest_api.pypi.execution_arn
   rest_api_id               = aws_api_gateway_rest_api.pypi.id
@@ -124,14 +124,15 @@ module serverless_pypi {
 # SERVERLESS PYPI AUTHORIZER
 
 module serverless_pypi_cognito {
-  source               = "amancevice/serverless-pypi-cognito/aws"
-  version              = "~> 0.3"
-  api_id               = aws_api_gateway_rest_api.pypi.id
-  lambda_function_name = "pypi-mancevice-dev-authorizer"
-  lambda_publish       = local.publish_lambdas
-  role_name            = "pypi-mancevice-dev-authorizer"
-  tags                 = local.tags
-  user_pool_name       = "pypi.mancevice.dev"
+  source  = "amancevice/serverless-pypi-cognito/aws"
+  version = "~> 1.0"
+
+  cognito_user_pool_name = "pypi.mancevice.dev"
+  iam_role_name          = "pypi-mancevice-dev-authorizer"
+  lambda_function_name   = "pypi-mancevice-dev-authorizer"
+  lambda_publish         = local.publish_lambdas
+  rest_api_id            = aws_api_gateway_rest_api.pypi.id
+  tags                   = local.tags
 }
 
 # OUTPUTS
