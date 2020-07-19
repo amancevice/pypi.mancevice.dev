@@ -137,6 +137,16 @@ module serverless_pypi_cognito {
 
 # OUTPUTS
 
+output cognito_client_id {
+  description = "Cognito user pool client ID"
+  value       = module.serverless_pypi_cognito.cognito_user_pool_client.id
+}
+
+output cognito_user_pool_id {
+  description = "Cognito user pool ID"
+  value       = module.serverless_pypi_cognito.cognito_user_pool.id
+}
+
 output pypi_url {
   description = "PyPI endpoint URL"
   value       = "https://${aws_api_gateway_domain_name.pypi_mancevice_dev.domain_name}/${aws_api_gateway_base_path_mapping.simple.base_path}/"
