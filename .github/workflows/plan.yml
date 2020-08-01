@@ -11,9 +11,11 @@ jobs:
       - uses: actions/checkout@v1
       - uses: actions/setup-ruby@v1
       - uses: hashicorp/setup-terraform@v1
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            ${{ secrets.AWS_DEFAULT_REGION }}
+          role-to-assume:        ${{ secrets.AWS_ROLE_ARN }}
+          role-duration-seconds: 900
       - run: rake terraform:plan
-        env:
-          AWS_ACCESS_KEY_ID:     ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_DEFAULT_REGION:    ${{ secrets.AWS_DEFAULT_REGION }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          TF_VAR_ROLE_ARN:       ${{ secrets.TF_VAR_ROLE_ARN }}
