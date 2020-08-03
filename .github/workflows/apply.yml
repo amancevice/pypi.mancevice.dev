@@ -1,19 +1,23 @@
-name: plan
+name: apply
 on:
-  pull_request:
   push:
-  schedule:
-    - cron: "11 21 * * *"
+    tags:
+      - '*'
 jobs:
-  plan:
+  apply:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
+      - uses: actions/setup-python@v1
       - uses: actions/setup-ruby@v1
       - uses: hashicorp/setup-terraform@v1
+        with:
+          # https://github.com/hashicorp/setup-terraform/issues/20
+          terraform_wrapper: false
       - uses: amancevice/aws-sts-assume-role@v0
         with:
           access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
           secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           role-arn:          ${{ secrets.AWS_ROLE_ARN }}
-      - run: rake terraform:plan
+      - run: pip install awscli
+      - run: rake terraform:apply
