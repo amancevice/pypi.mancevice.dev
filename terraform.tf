@@ -22,12 +22,12 @@ terraform {
 # PROVIDERS
 
 provider archive {
-  # version = "~> 1.2"
+  version = "~> 1.3"
 }
 
 provider aws {
-  region = "us-east-1"
-  # version = "~> 2.7"
+  region  = "us-east-1"
+  version = "~> 3.1"
 }
 
 # API GATEWAY :: REST API
