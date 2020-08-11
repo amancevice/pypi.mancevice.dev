@@ -1,5 +1,3 @@
-variable ROLE_ARN { default = null }
-
 locals {
   base_path       = "simple"
   publish_lambdas = true
@@ -30,10 +28,6 @@ provider archive {
 provider aws {
   region  = "us-east-1"
   version = "~> 2.7"
-
-  assume_role {
-    role_arn = var.ROLE_ARN
-  }
 }
 
 # API GATEWAY :: REST API
@@ -77,40 +71,21 @@ resource aws_api_gateway_deployment v1 {
   }
 }
 
-# API GATEWAY :: DOMAIN
-
-data aws_acm_certificate mancevice_dev {
-  domain = "mancevice.dev"
-  types  = ["AMAZON_ISSUED"]
-}
-
-resource aws_api_gateway_base_path_mapping simple {
-  api_id      = aws_api_gateway_rest_api.pypi.id
-  base_path   = local.base_path
-  domain_name = aws_api_gateway_domain_name.pypi_mancevice_dev.domain_name
-  stage_name  = aws_api_gateway_stage.prod.stage_name
-}
-
-resource aws_api_gateway_domain_name pypi_mancevice_dev {
-  certificate_arn = data.aws_acm_certificate.mancevice_dev.arn
-  domain_name     = aws_api_gateway_rest_api.pypi.name
-}
-
 # SERVERLESS PYPI
 
 module serverless_pypi {
   source  = "amancevice/serverless-pypi/aws"
   version = "~> 2.0"
 
-  iam_role_name  = "pypi-mancevice-dev"
+  iam_role_name  = "mancevice-dev-pypi"
   s3_bucket_name = "pypi.mancevice.dev"
   tags           = local.tags
 
   lambda_api_fallback_index_url = "https://pypi.org/simple/"
-  lambda_api_function_name      = "pypi-mancevice-dev-api"
+  lambda_api_function_name      = "mancevice-dev-pypi-api"
   lambda_api_publish            = local.publish_lambdas
 
-  lambda_reindex_function_name = "pypi-mancevice-dev-reindex"
+  lambda_reindex_function_name = "mancevice-dev-pypi-reindex"
   lambda_reindex_publish       = local.publish_lambdas
 
   rest_api_authorization    = "CUSTOM"
@@ -128,8 +103,8 @@ module serverless_pypi_cognito {
   version = "~> 1.0"
 
   cognito_user_pool_name = "pypi.mancevice.dev"
-  iam_role_name          = "pypi-mancevice-dev-authorizer"
-  lambda_function_name   = "pypi-mancevice-dev-authorizer"
+  iam_role_name          = "mancevice-dev-pypi-authorizer"
+  lambda_function_name   = "mancevice-dev-pypi-authorizer"
   lambda_publish         = local.publish_lambdas
   rest_api_id            = aws_api_gateway_rest_api.pypi.id
   tags                   = local.tags
@@ -149,5 +124,5 @@ output cognito_user_pool_id {
 
 output pypi_url {
   description = "PyPI endpoint URL"
-  value       = "https://${aws_api_gateway_domain_name.pypi_mancevice_dev.domain_name}/${aws_api_gateway_base_path_mapping.simple.base_path}/"
+  value       = "https://${aws_apigatewayv2_domain_name.pypi_mancevice_dev.domain_name}/${aws_apigatewayv2_stage.default.name}/"
 }
