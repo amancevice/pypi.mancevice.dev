@@ -16,18 +16,18 @@ terraform {
     region = "us-east-1"
   }
 
-  required_version = "~> 0.12"
+  required_version = "~> 0.13"
 }
 
 # PROVIDERS
 
 provider archive {
-  version = "~> 1.2"
+  # version = "~> 1.2"
 }
 
 provider aws {
-  region  = "us-east-1"
-  version = "~> 2.7"
+  region = "us-east-1"
+  # version = "~> 2.7"
 }
 
 # API GATEWAY :: REST API
