@@ -1,8 +1,9 @@
 # API GATEWAY :: DOMAIN
 
 data aws_acm_certificate mancevice_dev {
-  domain = "mancevice.dev"
-  types  = ["AMAZON_ISSUED"]
+  domain      = "mancevice.dev"
+  most_recent = true
+  types       = ["AMAZON_ISSUED"]
 }
 
 resource aws_apigatewayv2_domain_name pypi_mancevice_dev {
@@ -26,7 +27,7 @@ resource aws_apigatewayv2_api_mapping default {
 
 resource aws_apigatewayv2_api pypi {
   description   = "PyPI for mancevice.dev"
-  name          = "pypi-v2"
+  name          = "mancevice.dev/pypi"
   protocol_type = "HTTP"
   tags          = local.tags
 }
