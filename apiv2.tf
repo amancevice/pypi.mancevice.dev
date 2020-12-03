@@ -1,12 +1,12 @@
 # API GATEWAY :: DOMAIN
 
-data aws_acm_certificate mancevice_dev {
+data "aws_acm_certificate" "mancevice_dev" {
   domain      = "mancevice.dev"
   most_recent = true
   types       = ["AMAZON_ISSUED"]
 }
 
-resource aws_apigatewayv2_domain_name pypi_mancevice_dev {
+resource "aws_apigatewayv2_domain_name" "pypi_mancevice_dev" {
   domain_name = "pypi.mancevice.dev"
 
   domain_name_configuration {
@@ -16,7 +16,7 @@ resource aws_apigatewayv2_domain_name pypi_mancevice_dev {
   }
 }
 
-resource aws_apigatewayv2_api_mapping default {
+resource "aws_apigatewayv2_api_mapping" "default" {
   api_id          = aws_apigatewayv2_api.pypi.id
   api_mapping_key = "simple"
   domain_name     = aws_apigatewayv2_domain_name.pypi_mancevice_dev.id
@@ -25,14 +25,14 @@ resource aws_apigatewayv2_api_mapping default {
 
 # API GATEWAY :: HTTP API
 
-resource aws_apigatewayv2_api pypi {
+resource "aws_apigatewayv2_api" "pypi" {
   description   = "PyPI for mancevice.dev"
   name          = "mancevice.dev/pypi"
   protocol_type = "HTTP"
   tags          = local.tags
 }
 
-resource aws_apigatewayv2_stage default {
+resource "aws_apigatewayv2_stage" "default" {
   api_id      = aws_apigatewayv2_api.pypi.id
   auto_deploy = true
   name        = "$default"
@@ -58,7 +58,7 @@ resource aws_apigatewayv2_stage default {
   }
 }
 
-resource aws_cloudwatch_log_group api_logs {
+resource "aws_cloudwatch_log_group" "api_logs" {
   name              = "/aws/apigatewayv2/${aws_apigatewayv2_api.pypi.name}"
   retention_in_days = 30
   tags              = local.tags
@@ -66,20 +66,16 @@ resource aws_cloudwatch_log_group api_logs {
 
 # API GATEWAY :: HTTP INTEGRATIONS
 
-resource aws_apigatewayv2_integration pypi {
+resource "aws_apigatewayv2_integration" "pypi" {
   api_id             = aws_apigatewayv2_api.pypi.id
   connection_type    = "INTERNET"
   description        = "PyPI proxy handler"
   integration_method = "POST"
   integration_type   = "AWS_PROXY"
   integration_uri    = module.serverless_pypi.lambda_api.invoke_arn
-
-  lifecycle {
-    ignore_changes = [passthrough_behavior]
-  }
 }
 
-resource aws_lambda_permission invoke_api {
+resource "aws_lambda_permission" "invoke_api" {
   action        = "lambda:InvokeFunction"
   function_name = module.serverless_pypi.lambda_api.function_name
   principal     = "apigateway.amazonaws.com"
@@ -89,42 +85,42 @@ resource aws_lambda_permission invoke_api {
 
 # API GATEWAY :: HTTP ROUTES
 
-resource aws_apigatewayv2_route root_get {
+resource "aws_apigatewayv2_route" "root_get" {
   api_id             = aws_apigatewayv2_api.pypi.id
   route_key          = "GET /"
   authorization_type = "NONE"
   target             = "integrations/${aws_apigatewayv2_integration.pypi.id}"
 }
 
-resource aws_apigatewayv2_route root_head {
+resource "aws_apigatewayv2_route" "root_head" {
   api_id             = aws_apigatewayv2_api.pypi.id
   route_key          = "HEAD /"
   authorization_type = "NONE"
   target             = "integrations/${aws_apigatewayv2_integration.pypi.id}"
 }
 
-resource aws_apigatewayv2_route root_post {
+resource "aws_apigatewayv2_route" "root_post" {
   api_id             = aws_apigatewayv2_api.pypi.id
   route_key          = "POST /"
   authorization_type = "NONE"
   target             = "integrations/${aws_apigatewayv2_integration.pypi.id}"
 }
 
-resource aws_apigatewayv2_route proxy_get {
+resource "aws_apigatewayv2_route" "proxy_get" {
   api_id             = aws_apigatewayv2_api.pypi.id
   route_key          = "GET /{proxy+}"
   authorization_type = "NONE"
   target             = "integrations/${aws_apigatewayv2_integration.pypi.id}"
 }
 
-resource aws_apigatewayv2_route proxy_head {
+resource "aws_apigatewayv2_route" "proxy_head" {
   api_id             = aws_apigatewayv2_api.pypi.id
   route_key          = "HEAD /{proxy+}"
   authorization_type = "NONE"
   target             = "integrations/${aws_apigatewayv2_integration.pypi.id}"
 }
 
-resource aws_apigatewayv2_route proxy_post {
+resource "aws_apigatewayv2_route" "proxy_post" {
   api_id             = aws_apigatewayv2_api.pypi.id
   route_key          = "POST /{proxy+}"
   authorization_type = "NONE"
