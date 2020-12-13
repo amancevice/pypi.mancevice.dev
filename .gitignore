@@ -10,6 +10,7 @@
 
 **/.docker/
 **/.terraform/
+**/.venv/
 *.coverage
 *.env
 *.zip
