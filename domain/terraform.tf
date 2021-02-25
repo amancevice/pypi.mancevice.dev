@@ -1,10 +1,8 @@
-variable "tags" {
-  type = map(string)
-}
+# VARIABLES & LOCALS
 
-locals {
-  tags = var.tags
-}
+variable "tags" { type = map(string) }
+
+locals { tags = var.tags }
 
 # API GATEWAY :: HTTP API
 
@@ -78,22 +76,14 @@ resource "aws_route53_record" "a" {
   zone_id = data.aws_route53_zone.mancevice_dev.zone_id
 
   alias {
-    name                   = aws_apigatewayv2_domain_name.pypi_mancevice_dev.domain_name_configuration[0].target_domain_name
-    zone_id                = aws_apigatewayv2_domain_name.pypi_mancevice_dev.domain_name_configuration[0].hosted_zone_id
+    name                   = aws_apigatewayv2_domain_name.pypi_mancevice_dev.domain_name_configuration.0.target_domain_name
+    zone_id                = aws_apigatewayv2_domain_name.pypi_mancevice_dev.domain_name_configuration.0.hosted_zone_id
     evaluate_target_health = false
   }
 }
 
 # OUTPUTS
 
-output "base_path" {
-  value = aws_apigatewayv2_api_mapping.default.api_mapping_key
-}
-
-output "name" {
-  value = aws_apigatewayv2_domain_name.pypi_mancevice_dev.domain_name
-}
-
-output "http_api" {
-  value = aws_apigatewayv2_api.pypi
-}
+output "base_path" { value = aws_apigatewayv2_api_mapping.default.api_mapping_key }
+output "name" { value = aws_apigatewayv2_domain_name.pypi_mancevice_dev.domain_name }
+output "http_api" { value = aws_apigatewayv2_api.pypi }

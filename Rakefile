@@ -1,6 +1,6 @@
 require "rake/clean"
 CLEAN.include ".terraform/terraform.zip"
-CLOBBER.include ".terraform"
+CLOBBER.include ".terraform", ".terraform.lock.hcl"
 task :default => %i[terraform:plan]
 
 PYPI_USER  = ENV["PYPI_USER"]
@@ -30,13 +30,13 @@ namespace :s3 do
 end
 
 namespace :terraform do
-  directory(".terraform") { sh "terraform init" }
+  task :init => ".terraform"
 
-  :".terraform/tfplan.zip".tap do |planfile|
-    file planfile => Dir["*.tf", "alexander/*"], order_only: ".terraform" do
-      sh "terraform plan -out #{planfile}"
-    end
+  directory ".terraform" do
+    sh "terraform init"
+  end
 
+  ".terraform/tfplan.zip".tap do |planfile|
     desc "terraform plan"
     task :plan => planfile
 
@@ -44,5 +44,11 @@ namespace :terraform do
     task :apply => planfile do
       sh "terraform apply #{planfile}"
     end
+
+    file planfile => Dir["*.tf", "alexander/*"], order_only: ".terraform" do |f|
+      sh "terraform plan -out #{f.name}"
+    end
   end
+
+
 end
