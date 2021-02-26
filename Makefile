@@ -1,5 +1,3 @@
-.PHONY: plan apply clean clobber
-
 plan: .terraform/tfplan.zip
 
 apply: .terraform/tfplan.zip
@@ -11,8 +9,10 @@ clean:
 clobber:
 	rm -rf .terraform*
 
-.terraform:
-	terraform init
+.PHONY: plan apply clean clobber
 
 .terraform/tfplan.zip: *.tf | .terraform
 	terraform plan -out $@
+
+.terraform:
+	terraform init

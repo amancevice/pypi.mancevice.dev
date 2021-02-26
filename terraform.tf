@@ -43,14 +43,15 @@ module "domain" {
 # SERVERLESS PYPI :: SERVICE
 
 module "serverless_pypi" {
-  # source  = "amancevice/serverless-pypi/aws"
-  # version = "~> 2.0"
-  source = "git::https://github.com/amancevice/terraform-aws-serverless-pypi?ref=apigatewayv2"
+  source  = "amancevice/serverless-pypi/aws"
+  version = "~> 3.0"
+
+  api_authorizer_id      = module.serverless_pypi_cognito.api_authorizer.id
+  api_id                 = module.domain.http_api.id
+  api_execution_arn      = module.domain.http_api.execution_arn
+  api_authorization_type = "CUSTOM"
 
   iam_role_name = "mancevice-dev-pypi"
-
-  http_api_id            = module.domain.http_api.id
-  http_api_execution_arn = module.domain.http_api.execution_arn
 
   lambda_api_fallback_index_url = "https://pypi.org/simple/"
   lambda_api_function_name      = "mancevice-dev-pypi-http-api"
@@ -60,6 +61,7 @@ module "serverless_pypi" {
   lambda_reindex_function_name = "mancevice-dev-pypi-reindex"
   lambda_reindex_publish       = local.publish_lambdas
   lambda_reindex_tags          = local.tags
+  lambda_reindex_timeout       = 30
 
   log_group_api_retention_in_days     = 30
   log_group_api_tags                  = local.tags
@@ -71,6 +73,19 @@ module "serverless_pypi" {
 
   sns_topic_name = "mancevice-dev-pypi-s3-events"
   sns_topic_tags = local.tags
+}
+
+# SERVERLESS PYPI :: COGNITO
+
+module "serverless_pypi_cognito" {
+  source  = "amancevice/serverless-pypi-cognito/aws"
+  version = "~> 2.0"
+
+  api_id                 = module.domain.http_api.id
+  api_execution_arn      = module.domain.http_api.execution_arn
+  cognito_user_pool_name = "mancevice-dev-pypi"
+  iam_role_name          = module.serverless_pypi.iam_role.name
+  lambda_function_name   = "mancevice-dev-pypi-authorizer"
 }
 
 # RESOURCE GROUPS
@@ -95,6 +110,13 @@ resource "aws_resourcegroups_group" "resource_group" {
 # OUTPUTS
 
 output "pypi_url_http" {
-  description = "PyPI endpoint URL"
-  value       = "https://${module.domain.name}/${module.domain.base_path}/"
+  value = "https://${module.domain.name}/${module.domain.base_path}/"
+}
+
+output "cognito_user_pool_id" {
+  value = module.serverless_pypi_cognito.cognito_user_pool.id
+}
+
+output "cognito_user_pool_client_id" {
+  value = module.serverless_pypi_cognito.cognito_user_pool_client.id
 }
