@@ -44,7 +44,7 @@ module "domain" {
 
 module "serverless_pypi" {
   source  = "amancevice/serverless-pypi/aws"
-  version = "~> 3.0"
+  version = "~> 3.1"
 
   api_authorizer_id      = module.serverless_pypi_cognito.api_authorizer.id
   api_id                 = module.domain.http_api.id
