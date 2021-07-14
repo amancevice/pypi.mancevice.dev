@@ -1,5 +1,5 @@
 terraform {
-  required_version = "~> 0.14"
+  required_version = "~> 1.0"
 
   backend "s3" {
     bucket = "mancevice.dev"
@@ -8,6 +8,11 @@ terraform {
   }
 
   required_providers {
+    archive = {
+      source  = "hashicorp/archive"
+      version = "~> 2.0"
+    }
+
     aws = {
       source  = "hashicorp/aws"
       version = "~> 3.0"
@@ -44,12 +49,12 @@ module "domain" {
 
 module "serverless_pypi" {
   source  = "amancevice/serverless-pypi/aws"
-  version = "~> 3.1"
+  version = "~> 4.1"
 
-  api_authorizer_id      = module.serverless_pypi_cognito.api_authorizer.id
-  api_id                 = module.domain.http_api.id
-  api_execution_arn      = module.domain.http_api.execution_arn
-  api_authorization_type = "CUSTOM"
+  # api_authorizer_id      = module.serverless_pypi_cognito.api_authorizer.id
+  # api_authorization_type = "CUSTOM"
+  api_id            = module.domain.http_api.id
+  api_execution_arn = module.domain.http_api.execution_arn
 
   iam_role_name = "mancevice-dev-pypi"
 
@@ -79,7 +84,7 @@ module "serverless_pypi" {
 
 module "serverless_pypi_cognito" {
   source  = "amancevice/serverless-pypi-cognito/aws"
-  version = "~> 2.0"
+  version = "~> 3.0"
 
   api_id                 = module.domain.http_api.id
   api_execution_arn      = module.domain.http_api.execution_arn
@@ -109,8 +114,12 @@ resource "aws_resourcegroups_group" "resource_group" {
 
 # OUTPUTS
 
+output "pypi_api_log_group" {
+  value = module.serverless_pypi.lambda_api_log_group.name
+}
+
 output "pypi_url_http" {
-  value = "https://${module.domain.name}/${module.domain.base_path}/"
+  value = "https://${module.domain.name}/${module.domain.base_path == "" ? "" : "${module.domain.base_path}/"}"
 }
 
 output "cognito_user_pool_id" {

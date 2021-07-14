@@ -9,7 +9,10 @@ clean:
 clobber:
 	rm -rf .terraform*
 
-.PHONY: plan apply clean clobber
+logs:
+	aws logs tail $$(terraform output -raw pypi_api_log_group) --follow
+
+.PHONY: plan apply clean clobber logs
 
 .terraform/tfplan.zip: *.tf | .terraform
 	terraform plan -out $@
